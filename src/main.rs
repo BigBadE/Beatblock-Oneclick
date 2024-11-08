@@ -1,5 +1,6 @@
 mod downloader;
 mod settings;
+mod updater;
 
 use std::env;
 use futures::{SinkExt, StreamExt};
@@ -13,10 +14,13 @@ use tokio_tungstenite::accept_async;
 use tokio_tungstenite::tungstenite::protocol::Message;
 use crate::downloader::{handle_download, handle_remove};
 use crate::settings::LocalData;
+use crate::updater::update;
 
 /// Handle an individual WebSocket connection with broadcasting
 async fn handle_connection(stream: TcpStream, _addr: SocketAddr) -> Result<(), Error> {
     let ws_stream = accept_async(stream).await?;
+
+    update()?;
 
     let (mut write, mut read) = ws_stream.split();
     let data = LocalData::new();

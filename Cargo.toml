@@ -5,13 +5,16 @@ edition = "2021"
 
 [dependencies]
 # WebSocket server
-tokio = "1.41.0"
+tokio = "1.41.1"
 tokio-tungstenite = "0.24.0"
-futures = "0.3"
+futures = "0.3.31"
 
-reqwest = { version = "0.11", features = ["rustls-tls"] }
+reqwest = { version = "0.12.9", features = ["rustls-tls"] }
 
 dirs = "5.0.1"
+
+# Self updating
+self_update = { version = "0.41.0", features = ["archive-zip"] }
 
 # Handles URLs
 system_uri = { git = "https://github.com/BigBadE/system_uri" }
@@ -25,4 +28,4 @@ zip = "2.2.0"
 # Serialization
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
-url = "2.5.2"
+tempfile = "3.12.0"
