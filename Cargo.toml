@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # WebSocket server
-tokio = "1.41.1"
+tokio = {  version = "1.41.1", features = ["macros", "rt-multi-thread"] }
 tokio-tungstenite = "0.24.0"
 futures = "0.3.31"
 
