@@ -20,7 +20,7 @@ use crate::updater::update;
 async fn handle_connection(stream: TcpStream, _addr: SocketAddr) -> Result<(), Error> {
     let ws_stream = accept_async(stream).await?;
 
-    update()?;
+    tokio::task::spawn_blocking(update).await??;
 
     let (mut write, mut read) = ws_stream.split();
     let data = LocalData::new();
@@ -50,6 +50,7 @@ async fn main() {
 }
 
 async fn run() -> Result<(), Error> {
+    tokio::task::spawn_blocking(update).await??;
     let exec = env::current_exe()?.to_str().unwrap().to_string();
     match env::args().len() {
         1 => {
