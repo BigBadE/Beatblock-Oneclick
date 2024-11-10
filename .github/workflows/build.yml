@@ -1,0 +1,54 @@
+name: Oneclick-Windows
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+# Cancel any other build tasks running right now to prevent stale uploads
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    permissions: write-all
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, macos-13, windows-latest ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Get Version
+        id: get_version
+        shell: bash
+        run: |
+          # One-line bash command to extract the version from Cargo.toml
+          version=$(grep -m1 '^version' Cargo.toml | cut -d '"' -f2)
+          echo "Version extracted: $version"
+          # Set the version as an output variable
+          echo "version=$version" >> $GITHUB_OUTPUT
+      - name: Set Executable Name
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            echo "EXECUTABLE_NAME=oneclick.exe" >> $GITHUB_ENV
+          else
+            echo "EXECUTABLE_NAME=oneclick" >> $GITHUB_ENV
+          fi
+      - name: Build
+        run: cargo build --verbose --release
+      - name: Release
+        uses: shogo82148/actions-upload-release-asset@v1
+        if: github.event_name == 'push' && github.repository == 'BigBadE/BeatBlock-Oneclick'
+        with:
+          upload_url: https://uploads.github.com/repos/BigBadE/BeatBlock-Oneclick/releases/184218622/assets
+          asset_path: target/release/${{ env.EXECUTABLE_NAME }}
+          asset_name: ${{matrix.target}}-${{ steps.get_version.outputs.version }}-${{ env.EXECUTABLE_NAME }}
+          overwrite: true

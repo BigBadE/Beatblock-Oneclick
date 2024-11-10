@@ -1,12 +1,14 @@
-use anyhow::Error;
+use anyhow::{Context, Error};
 use reqwest::header::{HeaderMap, ACCEPT, USER_AGENT};
 use reqwest::Client;
-use self_update::backends::github::ReleaseList;
+use self_update::backends::github::{ReleaseList, Update};
 use self_update::self_replace::self_replace;
 use std::fs::File;
 use std::io::{Cursor, Read};
 use std::ops::Deref;
 use std::{env, io};
+use self_update::cargo_crate_version;
+use self_update::version::bump_is_greater;
 use zip::ZipArchive;
 
 pub async fn update() -> Result<(), Error> {
@@ -16,26 +18,15 @@ pub async fn update() -> Result<(), Error> {
         .build()?
         .fetch()).await??;
 
-    let target = match env::consts::OS {
-        "linux" => match env::consts::ARCH {
-            "x86_64" => "linux",
-            _ => return Err(Error::msg("unsupported ARCH")),
-        },
-        "macos" => match env::consts::ARCH {
-            "x86_64" => "macos-x86",
-            "arm" => "macos-arm",
-            _ => return Err(Error::msg("unsupported ARCH")),
-        },
-        "windows" => match env::consts::ARCH {
-            "x86_64" => "windows",
-            _ => return Err(Error::msg("unsupported ARCH")),
-        }
-        _ => return Err(Error::msg("unsupported OS")),
-    };
     // get the first available release
     let asset = releases[0]
-        .asset_for(&target, None)
-        .unwrap();
+        .asset_for(&self_update::get_target(), None)
+        .context("Your OS and architecture is not supported! Please file an issue!")?;
+
+    if !bump_is_greater(env!("CARGO_PKG_VERSION"),
+                        asset.name.split("-").nth(1).unwrap()) {
+        return Ok(());
+    }
 
     let tmp_dir = tempfile::Builder::new()
         .prefix("self_update")
