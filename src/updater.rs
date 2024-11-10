@@ -1,15 +1,13 @@
 use anyhow::{Context, Error};
 use reqwest::header::{HeaderMap, ACCEPT, USER_AGENT};
 use reqwest::Client;
-use self_update::backends::github::{ReleaseList, Update};
+use self_update::backends::github::ReleaseList;
 use self_update::self_replace::self_replace;
+use self_update::version::bump_is_greater;
 use std::fs::File;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 use std::ops::Deref;
 use std::{env, io};
-use self_update::cargo_crate_version;
-use self_update::version::bump_is_greater;
-use zip::ZipArchive;
 
 pub async fn update() -> Result<(), Error> {
     let releases = tokio::task::spawn_blocking(|| ReleaseList::configure()
@@ -24,7 +22,7 @@ pub async fn update() -> Result<(), Error> {
         .context("Your OS and architecture is not supported! Please file an issue!")?;
 
     if !bump_is_greater(env!("CARGO_PKG_VERSION"),
-                        asset.name.split("-").nth(1).unwrap()) {
+                        asset.name.split("-").nth(1).unwrap())? {
         return Ok(());
     }
 
