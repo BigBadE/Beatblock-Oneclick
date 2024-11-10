@@ -29,14 +29,11 @@ jobs:
         id: get_version
         shell: bash
         run: |
-          # One-line bash command to extract the version from Cargo.toml
           version=$(grep -m1 '^version' Cargo.toml | cut -d '"' -f2)
-          echo "Version extracted: $version"
-          # Set the version as an output variable
-          echo "version=$version" >> $GITHUB_OUTPUT
-      - name: Set Executable Name
-        shell: bash
-        run: |
+          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "RUNNER_OS_LOWER=$(echo ${{ env.RUNNER_OS }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "RUNNER_ARCH_LOWER=$(echo ${{ env.RUNNER_ARCH }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          # Set the exe name
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             echo "EXECUTABLE_NAME=oneclick.exe" >> $GITHUB_ENV
           else
@@ -50,5 +47,5 @@ jobs:
         with:
           upload_url: https://uploads.github.com/repos/BigBadE/BeatBlock-Oneclick/releases/184218622/assets
           asset_path: target/release/${{ env.EXECUTABLE_NAME }}
-          asset_name: ${{matrix.target}}-${{ steps.get_version.outputs.version }}-${{ env.EXECUTABLE_NAME }}
+          asset_name: ${{ env.RUNNER_OS_LOWER }}-${{ env.RUNNER_ARCH_LOWER }}-${{ env.VERSION }}-${{ env.EXECUTABLE_NAME }}
           overwrite: true
