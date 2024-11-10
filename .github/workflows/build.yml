@@ -51,3 +51,6 @@ jobs:
           artifacts: ${{ env.RUNNER_OS_LOWER }}-${{ env.RUNNER_ARCH_LOWER }}-${{ env.VERSION }}-${{ env.EXECUTABLE_NAME }}
           bodyFile: release.md
           tag: ${{ env.VERSION }}
+          allowUpdates: 'true'
+          artifactErrorsFailBuild: 'true'
+          makeLatest: 'true'
