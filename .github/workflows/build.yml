@@ -24,6 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
+          fetch-depth: 0
           submodules: true
       - name: Get Version
         id: get_version
@@ -41,11 +42,12 @@ jobs:
           fi
       - name: Build
         run: cargo build --verbose --release
+      - name: Move
+        run: mv target/release/${{ env.EXECUTABLE_NAME }} ${{ env.RUNNER_OS_LOWER }}-${{ env.RUNNER_ARCH_LOWER }}-${{ env.VERSION }}-${{ env.EXECUTABLE_NAME }}
       - name: Release
-        uses: shogo82148/actions-upload-release-asset@v1
+        uses: ncipollo/release-action@v1
         if: github.event_name == 'push' && github.repository == 'BigBadE/BeatBlock-Oneclick'
         with:
-          upload_url: https://uploads.github.com/repos/BigBadE/BeatBlock-Oneclick/releases/184218622/assets
-          asset_path: target/release/${{ env.EXECUTABLE_NAME }}
-          asset_name: ${{ env.RUNNER_OS_LOWER }}-${{ env.RUNNER_ARCH_LOWER }}-${{ env.VERSION }}-${{ env.EXECUTABLE_NAME }}
-          overwrite: true
+          artifacts: ${{ env.RUNNER_OS_LOWER }}-${{ env.RUNNER_ARCH_LOWER }}-${{ env.VERSION }}-${{ env.EXECUTABLE_NAME }}
+          bodyFile: release.md
+          tag: ${{ env.VERSION }}

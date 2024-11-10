@@ -22,7 +22,7 @@ pub async fn update() -> Result<(), Error> {
         .context("Your OS and architecture is not supported! Please file an issue!")?;
 
     if !bump_is_greater(env!("CARGO_PKG_VERSION"),
-                        asset.name.split("-").nth(2).unwrap())? {
+                        &releases[0].version)? {
         return Ok(());
     }
 
