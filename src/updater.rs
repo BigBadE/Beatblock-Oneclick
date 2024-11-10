@@ -1,41 +1,58 @@
 use anyhow::Error;
-use reqwest::header::ACCEPT;
+use reqwest::header::{HeaderMap, ACCEPT, USER_AGENT};
+use reqwest::Client;
 use self_update::backends::github::ReleaseList;
 use self_update::self_replace::self_replace;
-use self_update::{ArchiveKind, Download, Extract};
-use std::env;
 use std::fs::File;
-use std::path::PathBuf;
+use std::io::{Cursor, Read};
+use std::ops::Deref;
+use std::{env, io};
+use zip::ZipArchive;
 
-pub fn update() -> Result<(), Error> {
-    let releases = ReleaseList::configure()
+pub async fn update() -> Result<(), Error> {
+    let releases = tokio::task::spawn_blocking(|| ReleaseList::configure()
         .repo_owner("BigBadE")
         .repo_name("BeatBlock-Oneclick")
         .build()?
-        .fetch()?;
-    println!("found releases:");
-    println!("{:#?}\n", releases);
+        .fetch()).await??;
 
+    let target = match env::consts::OS {
+        "linux" => match env::consts::ARCH {
+            "x86_64" => "linux",
+            _ => return Err(Error::msg("unsupported ARCH")),
+        },
+        "macos" => match env::consts::ARCH {
+            "x86_64" => "macos-x86",
+            "arm" => "macos-arm",
+            _ => return Err(Error::msg("unsupported ARCH")),
+        },
+        "windows" => match env::consts::ARCH {
+            "x86_64" => "windows",
+            _ => return Err(Error::msg("unsupported ARCH")),
+        }
+        _ => return Err(Error::msg("unsupported OS")),
+    };
     // get the first available release
     let asset = releases[0]
-        .asset_for(&self_update::get_target(), None).unwrap();
+        .asset_for(&target, None)
+        .unwrap();
 
     let tmp_dir = tempfile::Builder::new()
         .prefix("self_update")
         .tempdir_in(env::current_dir()?)?;
-    let tmp_tarball_path = tmp_dir.path().join(&asset.name);
-    let tmp_tarball = File::open(&tmp_tarball_path)?;
 
-    Download::from_url(&asset.download_url)
-        .set_header(ACCEPT, "application/octet-stream".parse()?)
-        .download_to(&tmp_tarball)?;
+    let mut headers = HeaderMap::new();
+    headers.insert(USER_AGENT, "BigBadE-BeatBlock-Oneclick".parse()?);
+    headers.insert(ACCEPT, "application/octet-stream".parse()?);
+    let response = Client::builder().default_headers(headers).build()?.get(asset.download_url).send().await?;
+    let bytes = response.bytes().await?;
 
-    let bin_name = PathBuf::from("self_update_bin");
-    Extract::from_source(&tmp_tarball_path)
-        .archive(ArchiveKind::Zip)
-        .extract_file(&tmp_dir.path(), &bin_name)?;
+    println!("{}", String::from_utf8_lossy(bytes.clone().into_iter().collect::<Vec<_>>().deref()));
 
-    let new_exe = tmp_dir.path().join(bin_name);
+    // Create a cursor for the ZIP bytes
+    let mut cursor = Cursor::new(bytes);
+    let new_exe = tmp_dir.path().join("self_update_bin");
+    io::copy(&mut cursor, &mut File::create(&new_exe)?)?;
     self_replace(new_exe)?;
 
     Ok(())

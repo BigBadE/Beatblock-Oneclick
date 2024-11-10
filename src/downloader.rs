@@ -1,15 +1,17 @@
-use std::fs;
-use std::io::Cursor;
 use crate::settings::LocalData;
 use anyhow::Error;
 use reqwest::get;
+use std::fs;
+use std::io::Cursor;
 use zip::ZipArchive;
 
 const URL: &'static str = "http://127.0.0.1:3000";
 
 pub async fn handle_download(data: LocalData, map: String) -> Result<(), Error> {
     let Some(levels_dir) = data.levels_dir else {
-        return Err(Error::msg("Set the location of the custom levels folder in your Account page"))
+        return Err(Error::msg(
+            "Set the location of the custom levels folder in your Account page",
+        ));
     };
 
     // Download the ZIP file
@@ -26,7 +28,7 @@ pub async fn handle_download(data: LocalData, map: String) -> Result<(), Error> 
 
     let map = levels_dir.join(map);
     if fs::exists(map.clone()).unwrap_or(false) {
-        return Err(Error::msg("Map already downloaded!"))
+        return Err(Error::msg("Map already downloaded!"));
     }
     fs::create_dir_all(map.clone())?;
     zip.extract(map.clone())
@@ -39,12 +41,17 @@ pub async fn handle_download(data: LocalData, map: String) -> Result<(), Error> 
 
 pub fn handle_remove(data: LocalData, map: String) -> Result<(), Error> {
     let Some(levels_dir) = data.levels_dir else {
-        return Err(Error::msg("Set the location of the custom levels folder in your Account page"))
+        return Err(Error::msg(
+            "Set the location of the custom levels folder in your Account page",
+        ));
     };
 
     let map = levels_dir.join(map);
     if !fs::exists(map.clone()).unwrap_or(true) {
-        return Err(Error::msg(format!("Map is not downloaded! {}", map.to_str().unwrap())))
+        return Err(Error::msg(format!(
+            "Map is not downloaded! {}",
+            map.to_str().unwrap()
+        )));
     }
 
     fs::remove_dir_all(map)?;
