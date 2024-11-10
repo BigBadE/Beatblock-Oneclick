@@ -31,8 +31,8 @@ jobs:
         run: |
           version=$(grep -m1 '^version' Cargo.toml | cut -d '"' -f2)
           echo "VERSION=$version" >> $GITHUB_ENV
-          echo "RUNNER_OS_LOWER=$(echo ${{ env.RUNNER_OS }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          echo "RUNNER_ARCH_LOWER=$(echo ${{ env.RUNNER_ARCH }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "RUNNER_OS_LOWER=$(echo ${{ runner.os }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "RUNNER_ARCH_LOWER=$(echo ${{ runner.arch }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
           # Set the exe name
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             echo "EXECUTABLE_NAME=oneclick.exe" >> $GITHUB_ENV
