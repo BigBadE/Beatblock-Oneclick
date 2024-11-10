@@ -18,7 +18,7 @@ pub async fn update() -> Result<(), Error> {
 
     // get the first available release
     let asset = releases[0]
-        .asset_for(&format!("{}-{}", env::consts::OS, env::consts::ARCH), None)
+        .asset_for(&format!("{}-{}", env::consts::OS, env::consts::ARCH.replace("x86_64", "x64")), None)
         .context("Your OS and architecture is not supported! Please file an issue!")?;
 
     if !bump_is_greater(env!("CARGO_PKG_VERSION"),
